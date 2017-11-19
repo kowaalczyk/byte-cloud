@@ -5,6 +5,11 @@ import javafx.util.Pair;
 import java.util.*;
 import java.util.function.BiPredicate;
 
+// UWAGA: Byty nie moga byc wyciagane po wspolrzednych wiec jedyne co robi predykat to ogranicza przedział
+// TODO: Zaimplementować wszystko od nowa wykorzystując powyższy wniosek
+// TODO: ConcurrentCollections pozwolą łatwo zaimplementować operacje czytania dostępne bez oczekiwania
+// TODO: Metody rzucające InterruptedException mają być współbieżne (synchronizacja sekcji krytycznej)
+
 /**
  * Chmura bytów wymiaru n przyporządkowuje bytom miejsca, jednoznacznie identyfikowane przez ciąg n współrzędnych całkowitych. Zachowuje przy tym niezmiennik chmury: każdy byt jest w innym miejscu.
  * Chmura bytów może służyć do synchronizacji procesów współbieżnych.
@@ -19,6 +24,10 @@ public class Chmura {
             this.byt = byt;
             this.x = x;
             this.y = y;
+        }
+
+        public boolean bytEquals(Byt that) {
+            return this.byt == that;
         }
 
         @Override
@@ -40,7 +49,6 @@ public class Chmura {
             result = 31 * result + y;
             return result;
         }
-
 
         @Override
         public int compareTo(BytChmury that) {
@@ -77,6 +85,28 @@ public class Chmura {
         return !byty.contains(new BytChmury(new Byt(), x, y));
     }
 
+    private BytChmury znajdzByt(Byt szukanyByt) {
+        for(BytChmury b : byty) {
+            if(b.bytEquals(szukanyByt)) {
+                return b;
+            }
+        }
+        return null;
+    }
+
+    // TODO: Find a way to reduce complexity below O(n^2)
+    private Collection<BytChmury> znajdzByty(Collection<Byt> szukaneByty) {
+        Collection<BytChmury> znalezione = new ArrayList<>();
+        for(BytChmury b : byty) {
+            for(Byt byt : szukaneByty) {
+                if(b.bytEquals(byt)) {
+                    znalezione.add(b);
+                }
+            }
+        }
+        return znalezione;
+    }
+
     /**
      * Buduje chmurę, która w stanie początkowym nie ma żadnego bytu.
      */
@@ -92,13 +122,13 @@ public class Chmura {
         this.stan = stan;
     }
 
-
     /**
      * Daje jako wynik nowy byt, dodany do chmury w miejscu (x, y).
      */
     public Byt ustaw(int x, int y) throws InterruptedException {
-        // TODO
-        return null;
+        Byt nowy = new Byt();
+        byty.add(new BytChmury(nowy, x, y));
+        return nowy;
     }
 
     /**
@@ -115,14 +145,21 @@ public class Chmura {
      * Jeśli byt nie jest w chmurze, metoda zgłasza wyjątek NiebytException.
      */
     public void kasuj(Byt byt) throws NiebytException {
-        // TODO
+        BytChmury znaleziony = znajdzByt(byt);
+        if(znaleziony == null) {
+            throw new NiebytException();
+        }
+        byty.remove(znaleziony);
     }
 
     /**
      * Daje dwuelementową tablicę ze współrzędnymi x i y bytu, lub null, jeśli byt nie jest w chmurze.
      */
     public int[] miejsce(Byt byt) {
-        // TODO
-        return new int[0];
+        BytChmury znaleziony = znajdzByt(byt);
+        if(znaleziony == null) {
+            return null;
+        }
+        return new int[] {znaleziony.x, znaleziony.y};
     }
 }
