@@ -1,6 +1,8 @@
 package chmura;
 
-import java.util.Collection;
+import javafx.util.Pair;
+
+import java.util.*;
 import java.util.function.BiPredicate;
 
 /**
@@ -8,12 +10,80 @@ import java.util.function.BiPredicate;
  * Chmura bytów może służyć do synchronizacji procesów współbieżnych.
  */
 public class Chmura {
+    private class BytChmury implements Comparable {
+        private Byt byt;
+        private int x;
+        private int y;
+
+        public BytChmury(Byt byt, int x, int y) {
+            this.byt = byt;
+            this.x = x;
+            this.y = y;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            BytChmury bytChmury = (BytChmury) o;
+
+            if (x != bytChmury.x) return false;
+            if (y != bytChmury.y) return false;
+            return byt != null ? byt.equals(bytChmury.byt) : bytChmury.byt == null;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = byt != null ? byt.hashCode() : 0;
+            result = 31 * result + x;
+            result = 31 * result + y;
+            return result;
+        }
+
+
+        @Override
+        public int compareTo(Object o) {
+            return 0;
+        }
+    }
+
+    /**
+     * Kolekcja w której przechowywane są wszystkie byty.
+     */
+    private List<BytChmury> byty = Collections.synchronizedList(new ArrayList<BytChmury>());
+
+    /**
+     * W przypadku tworzenia chmury za pomocą domyślnego konstruktora stan nie jest używany.
+     */
+    private BiPredicate<Integer, Integer> stan;
+
+    /**
+     * Mapa pamiętająca które z elementów stanu zostały przeniesione (aby nie można było się do nich dostać 2 raz)
+     */
+    private Map<Pair<Integer, Integer>, Boolean> zainicjalizowany = new HashMap<>();
+
+    private void oznaczZainicjalizowany(int x, int y) {
+        zainicjalizowany.put(new Pair<>(x, y), true);
+    }
+
+    private boolean jestNiezainicjalizowany(int x, int y) {
+        return stan.test(x, y) && !(zainicjalizowany.get(new Pair<>(x, y)));
+    }
+
+    private boolean miejsceJestWolne(int x, int y) {
+        if(jestNiezainicjalizowany(x, y)) {
+            byty.add(new BytChmury(new Byt(), x, y));
+            oznaczZainicjalizowany(x, y);
+        }
+        return !byty.contains(new BytChmury(new Byt(), x, y));
+    }
 
     /**
      * Buduje chmurę, która w stanie początkowym nie ma żadnego bytu.
      */
     public Chmura() {
-        // TODO
+        this.stan = (x, y) -> false;
     }
 
     /**
@@ -21,7 +91,7 @@ public class Chmura {
      * W miejscu (x, y) jest byt wtedy i tylko wtedy, gdy stan.test(x, y) ma wartość true.
      */
     public Chmura(BiPredicate<Integer, Integer> stan) {
-        // TODO
+        this.stan = stan;
     }
 
 
