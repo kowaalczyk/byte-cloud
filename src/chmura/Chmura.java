@@ -10,12 +10,12 @@ import java.util.function.BiPredicate;
  * Chmura bytów może służyć do synchronizacji procesów współbieżnych.
  */
 public class Chmura {
-    private class BytChmury implements Comparable {
+    private class BytChmury implements Comparable<BytChmury> {
         private Byt byt;
         private int x;
         private int y;
 
-        public BytChmury(Byt byt, int x, int y) {
+        BytChmury(Byt byt, int x, int y) {
             this.byt = byt;
             this.x = x;
             this.y = y;
@@ -43,32 +43,30 @@ public class Chmura {
 
 
         @Override
-        public int compareTo(Object o) {
-            return 0;
+        public int compareTo(BytChmury that) {
+            if(this.x < that.x) {
+                return -1;
+            } else if(this.x > that.x) {
+                return 1;
+            } else {
+                return Integer.compare(this.y, that.y);
+            }
         }
     }
 
     /**
      * Kolekcja w której przechowywane są wszystkie byty.
      */
-    private List<BytChmury> byty = Collections.synchronizedList(new ArrayList<BytChmury>());
-
-    /**
-     * W przypadku tworzenia chmury za pomocą domyślnego konstruktora stan nie jest używany.
-     */
+    private Set<BytChmury> byty = Collections.synchronizedSet(new TreeSet<BytChmury>());
     private BiPredicate<Integer, Integer> stan;
-
-    /**
-     * Mapa pamiętająca które z elementów stanu zostały przeniesione (aby nie można było się do nich dostać 2 raz)
-     */
-    private Map<Pair<Integer, Integer>, Boolean> zainicjalizowany = new HashMap<>();
+    private Set<Pair<Integer, Integer>> zainicjalizowany = new HashSet<>();
 
     private void oznaczZainicjalizowany(int x, int y) {
-        zainicjalizowany.put(new Pair<>(x, y), true);
+        zainicjalizowany.add(new Pair<>(x, y));
     }
 
     private boolean jestNiezainicjalizowany(int x, int y) {
-        return stan.test(x, y) && !(zainicjalizowany.get(new Pair<>(x, y)));
+        return stan.test(x, y) && !(zainicjalizowany.contains(new Pair<>(x, y)));
     }
 
     private boolean miejsceJestWolne(int x, int y) {
