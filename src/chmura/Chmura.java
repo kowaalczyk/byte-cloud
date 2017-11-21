@@ -3,20 +3,19 @@ package chmura;
 import javafx.util.Pair;
 
 import java.util.*;
+import java.util.concurrent.Semaphore;
 import java.util.function.BiPredicate;
 
-// UWAGA: Byty nie moga byc wyciagane po wspolrzednych wiec jedyne co robi predykat to ogranicza przedział
-// TODO: Zaimplementować wszystko od nowa wykorzystując powyższy wniosek
 // TODO: ConcurrentCollections pozwolą łatwo zaimplementować operacje czytania dostępne bez oczekiwania
-// TODO: Metody rzucające InterruptedException mają być współbieżne (synchronizacja sekcji krytycznej)
 
 /**
  * Chmura bytów wymiaru n przyporządkowuje bytom miejsca, jednoznacznie identyfikowane przez ciąg n współrzędnych całkowitych. Zachowuje przy tym niezmiennik chmury: każdy byt jest w innym miejscu.
  * Chmura bytów może służyć do synchronizacji procesów współbieżnych.
  */
 public class Chmura {
-    private Set<Byt> byty = Collections.synchronizedSet(new TreeSet<Byt>());
     private BiPredicate<Integer, Integer> stan;
+    private Set<Byt> byty = Collections.synchronizedSet(new TreeSet<Byt>());
+    private Map<Pair<Integer, Integer>, Semaphore> czekajacy = Collections.synchronizedMap(new HashMap<Pair<Integer, Integer>, Semaphore>());
     private Set<Pair<Integer, Integer>> zainicjalizowany = new HashSet<>();
 
     private void oznaczZainicjalizowany(int x, int y) {
@@ -27,12 +26,16 @@ public class Chmura {
         return stan.test(x, y) && !(zainicjalizowany.contains(new Pair<>(x, y)));
     }
 
-    private boolean miejsceJestWolne(int x, int y) {
+    private void sprawdzNiezainicjalizowane(int x, int y) {
         if(jestNiezainicjalizowany(x, y)) {
+            // zainicjuj miejsce w kolekcji bytów
             byty.add(new Byt(x, y));
             oznaczZainicjalizowany(x, y);
+            // zainicjuj miejsce w kolejce
         }
-        return !byty.contains(new Byt(x, y));
+        boolean wolny = !byty.contains(new Byt(x, y));
+        int permits = wolny ? 1 : 0;
+        czekajacy.put(new Pair<>(x, y), new Semaphore(permits));
     }
 
     /**
@@ -55,7 +58,9 @@ public class Chmura {
      */
     public synchronized Byt ustaw(int x, int y) throws InterruptedException {
         Byt nowy = new Byt(x, y);
-        // TODO: Wait until the place is free
+        sprawdzNiezainicjalizowane(x, y);
+        Semaphore s = czekajacy.get(new Pair<>(x, y));
+        s.acquire();
         byty.add(nowy);
         return nowy;
     }
@@ -69,8 +74,14 @@ public class Chmura {
         if(!this.byty.containsAll(byty)) {
             throw new NiebytException();
         }
-        // TODO: Wait until places are free
-        byty.forEach(b -> b.move(dx, dy));
+        for(Byt b : byty) {
+            Pair<Integer, Integer> poprzedniaPozycja = new Pair<>(b.getX(), b.getY());
+            Pair<Integer, Integer> nowaPozycja = new Pair<>(b.getX()+dx, b.getY()+dy);
+            sprawdzNiezainicjalizowane(nowaPozycja.getKey(), nowaPozycja.getValue());
+            czekajacy.get(nowaPozycja).acquire();
+            b.move(dx, dy);
+            czekajacy.get(poprzedniaPozycja).release();
+        }
     }
 
     /**
@@ -82,6 +93,7 @@ public class Chmura {
             throw new NiebytException();
         }
         byty.remove(byt);
+        czekajacy.get(new Pair<>(byt.getX(), byt.getY())).release();
     }
 
     /**
