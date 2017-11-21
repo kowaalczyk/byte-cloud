@@ -15,57 +15,7 @@ import java.util.function.BiPredicate;
  * Chmura bytów może służyć do synchronizacji procesów współbieżnych.
  */
 public class Chmura {
-    private class BytChmury implements Comparable<BytChmury> {
-        private Byt byt;
-        private int x;
-        private int y;
-
-        BytChmury(Byt byt, int x, int y) {
-            this.byt = byt;
-            this.x = x;
-            this.y = y;
-        }
-
-        public boolean bytEquals(Byt that) {
-            return this.byt == that;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            BytChmury bytChmury = (BytChmury) o;
-
-            if (x != bytChmury.x) return false;
-            if (y != bytChmury.y) return false;
-            return byt != null ? byt.equals(bytChmury.byt) : bytChmury.byt == null;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = byt != null ? byt.hashCode() : 0;
-            result = 31 * result + x;
-            result = 31 * result + y;
-            return result;
-        }
-
-        @Override
-        public int compareTo(BytChmury that) {
-            if(this.x < that.x) {
-                return -1;
-            } else if(this.x > that.x) {
-                return 1;
-            } else {
-                return Integer.compare(this.y, that.y);
-            }
-        }
-    }
-
-    /**
-     * Kolekcja w której przechowywane są wszystkie byty.
-     */
-    private Set<BytChmury> byty = Collections.synchronizedSet(new TreeSet<BytChmury>());
+    private Set<Byt> byty = Collections.synchronizedSet(new TreeSet<Byt>());
     private BiPredicate<Integer, Integer> stan;
     private Set<Pair<Integer, Integer>> zainicjalizowany = new HashSet<>();
 
@@ -79,32 +29,10 @@ public class Chmura {
 
     private boolean miejsceJestWolne(int x, int y) {
         if(jestNiezainicjalizowany(x, y)) {
-            byty.add(new BytChmury(new Byt(), x, y));
+            byty.add(new Byt(x, y));
             oznaczZainicjalizowany(x, y);
         }
-        return !byty.contains(new BytChmury(new Byt(), x, y));
-    }
-
-    private BytChmury znajdzByt(Byt szukanyByt) {
-        for(BytChmury b : byty) {
-            if(b.bytEquals(szukanyByt)) {
-                return b;
-            }
-        }
-        return null;
-    }
-
-    // TODO: Find a way to reduce complexity below O(n^2)
-    private Collection<BytChmury> znajdzByty(Collection<Byt> szukaneByty) {
-        Collection<BytChmury> znalezione = new ArrayList<>();
-        for(BytChmury b : byty) {
-            for(Byt byt : szukaneByty) {
-                if(b.bytEquals(byt)) {
-                    znalezione.add(b);
-                }
-            }
-        }
-        return znalezione;
+        return !byty.contains(new Byt(x, y));
     }
 
     /**
@@ -125,9 +53,10 @@ public class Chmura {
     /**
      * Daje jako wynik nowy byt, dodany do chmury w miejscu (x, y).
      */
-    public Byt ustaw(int x, int y) throws InterruptedException {
-        Byt nowy = new Byt();
-        byty.add(new BytChmury(nowy, x, y));
+    public synchronized Byt ustaw(int x, int y) throws InterruptedException {
+        Byt nowy = new Byt(x, y);
+        // TODO: Wait until the place is free
+        byty.add(nowy);
         return nowy;
     }
 
@@ -136,8 +65,12 @@ public class Chmura {
      * Jeśli którykolwiek z bytów kolekcji byty nie jest w chmurze, metoda zgłasza wyjątek NiebytException.
      * Jeżeli wymaga tego niezmiennik chmury, metody ustaw() i przestaw() wstrzymują wątek do czasu, gdy ich wykonanie będzie możliwe. W przypadku przerwania zgłaszają wyjątek InterruptedException.
      */
-    public void przestaw(Collection<Byt> byty, int dx, int dy) throws NiebytException, InterruptedException {
-        // TODO
+    public synchronized void przestaw(Collection<Byt> byty, int dx, int dy) throws NiebytException, InterruptedException {
+        if(!this.byty.containsAll(byty)) {
+            throw new NiebytException();
+        }
+        // TODO: Wait until places are free
+        byty.forEach(b -> b.move(dx, dy));
     }
 
     /**
@@ -145,21 +78,19 @@ public class Chmura {
      * Jeśli byt nie jest w chmurze, metoda zgłasza wyjątek NiebytException.
      */
     public void kasuj(Byt byt) throws NiebytException {
-        BytChmury znaleziony = znajdzByt(byt);
-        if(znaleziony == null) {
+        if(!byty.contains(byt)) {
             throw new NiebytException();
         }
-        byty.remove(znaleziony);
+        byty.remove(byt);
     }
 
     /**
      * Daje dwuelementową tablicę ze współrzędnymi x i y bytu, lub null, jeśli byt nie jest w chmurze.
      */
     public int[] miejsce(Byt byt) {
-        BytChmury znaleziony = znajdzByt(byt);
-        if(znaleziony == null) {
+        if(!byty.contains(byt)) {
             return null;
         }
-        return new int[] {znaleziony.x, znaleziony.y};
+        return new int[] {byt.getX(), byt.getY()};
     }
 }
