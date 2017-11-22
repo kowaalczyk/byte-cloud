@@ -16,7 +16,7 @@ public class Chmura {
     private BiPredicate<Integer, Integer> stan;
     private Set<Byt> byty = Collections.synchronizedSet(new TreeSet<Byt>());
     private Map<Pair<Integer, Integer>, Semaphore> czekajacy = Collections.synchronizedMap(new HashMap<Pair<Integer, Integer>, Semaphore>());
-    private Set<Pair<Integer, Integer>> zainicjalizowany = new HashSet<>();
+    private Set<Pair<Integer, Integer>> zainicjalizowany = Collections.synchronizedSet(new HashSet<Pair<Integer, Integer>>());
 
     private void oznaczZainicjalizowany(int x, int y) {
         zainicjalizowany.add(new Pair<>(x, y));
@@ -74,12 +74,13 @@ public class Chmura {
         if(!this.byty.containsAll(byty)) {
             throw new NiebytException();
         }
-        for(Byt b : byty) {
-            Pair<Integer, Integer> poprzedniaPozycja = new Pair<>(b.getX(), b.getY());
-            Pair<Integer, Integer> nowaPozycja = new Pair<>(b.getX()+dx, b.getY()+dy);
+        for(Byt byt : byty) {
+            Pair<Integer, Integer> poprzedniaPozycja = new Pair<>(byt.getX(), byt.getY());
+            Pair<Integer, Integer> nowaPozycja = new Pair<>(byt.getX()+dx, byt.getY()+dy);
+
             sprawdzNiezainicjalizowane(nowaPozycja.getKey(), nowaPozycja.getValue());
             czekajacy.get(nowaPozycja).acquire();
-            b.move(dx, dy);
+            byt.move(dx, dy);
             czekajacy.get(poprzedniaPozycja).release();
         }
     }
