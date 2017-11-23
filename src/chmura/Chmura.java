@@ -25,8 +25,13 @@ public class Chmura {
 
     private boolean moznaPrzeniesc(Collection<Byt> byty, int dx, int dy) {
         boolean ans = true;
+        BiPredicate<Integer, Integer> stanBezKolekcji = stan;
         for(Byt byt : byty) {
-            ans = ans && !jestByt(byt.getX()+dx, byt.getY()+dy);
+            stanBezKolekcji = stanBezKolekcji.and((x, y) -> x != byt.getX() || y != byt.getY());
+        }
+        for(Byt byt : byty) {
+            // byt można przenieść jeśli miejsce jest wolne lub zostanie zwolnione przez inny byt z kolekcji
+            ans = ans && !stanBezKolekcji.test(byt.getX()+dx, byt.getY()+dy);
         }
         return ans;
     }
@@ -84,7 +89,7 @@ public class Chmura {
      * Usuwa byt z chmury.
      * Jeśli byt nie jest w chmurze, metoda zgłasza wyjątek NiebytException.
      */
-    public void kasuj(Byt byt) throws NiebytException {
+    public synchronized void kasuj(Byt byt) throws NiebytException {
         if(byt == null || !jestByt(byt.getX(), byt.getY())) {
             throw new NiebytException();
         }

@@ -3,11 +3,31 @@ package chmura;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.Assert.*;
 
+@SuppressWarnings("Duplicates")
 public class ChmuraTest {
+    @Test
+    public void walidacjaChmury() throws Exception {
+        Chmura chmura = new Chmura((x, y) -> x < y);
+        Byt byt = null;
+
+        byt = chmura.ustaw(0, 0);
+
+        Collection<Byt> byty = Arrays.asList(byt);
+        chmura.przestaw(byty, 1, -1);
+
+        @SuppressWarnings("unused")
+        int[] miejsce = chmura.miejsce(byt);
+        chmura.kasuj(byt);
+
+        new Chmura();
+        // passes if no exception is thrown
+    }
+
     @Test
     public void przesunieciePoWybudzeniu() throws Exception {
         Chmura chmura = new Chmura();
