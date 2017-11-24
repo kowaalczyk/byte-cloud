@@ -4,14 +4,14 @@ package chmura;
  * Placeholder used for testing
  */
 public class Byt implements Comparable<Byt> {
-    // TODO: Dodać id chmury
-
     private int x;
     private int y;
+    private Chmura chmura;
 
-    public Byt(int x, int y) {
+    public Byt(int x, int y, Chmura chmura) {
         this.x = x;
         this.y = y;
+        this.chmura = chmura;
     }
 
     int getX() {
@@ -22,9 +22,17 @@ public class Byt implements Comparable<Byt> {
         return y;
     }
 
+    Chmura getChmura() {
+        return chmura;
+    }
+
     void move(int dx, int dy) {
         this.x += dx;
         this.y += dy;
+    }
+
+    void kasuj() {
+        this.chmura = null;
     }
 
     @Override

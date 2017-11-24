@@ -23,6 +23,10 @@ public class Chmura {
         stan = stan.and((x, y) -> x != byt.getX() || y != byt.getY());
     }
 
+    private boolean bytNieIstnieje(Byt byt) {
+        return byt == null || byt.getChmura() != this || !jestByt(byt.getX(), byt.getY());
+    }
+
     private boolean moznaPrzeniesc(Collection<Byt> byty, int dx, int dy) {
         boolean ans = true;
         BiPredicate<Integer, Integer> stanBezKolekcji = stan;
@@ -55,7 +59,7 @@ public class Chmura {
      * Daje jako wynik nowy byt, dodany do chmury w miejscu (x, y).
      */
     public synchronized Byt ustaw(int x, int y) throws InterruptedException {
-        Byt nowy = new Byt(x, y);
+        Byt nowy = new Byt(x, y, this);
         while(jestByt(x, y)) {
             wait();
         }
@@ -70,7 +74,7 @@ public class Chmura {
      */
     public synchronized void przestaw(Collection<Byt> byty, int dx, int dy) throws NiebytException, InterruptedException {
         for(Byt byt : byty) {
-            if(byt == null || !jestByt(byt.getX(), byt.getY())) {
+            if(bytNieIstnieje(byt)) {
                 throw new NiebytException();
             }
         }
@@ -90,15 +94,17 @@ public class Chmura {
      * Jeśli byt nie jest w chmurze, metoda zgłasza wyjątek NiebytException.
      */
     public synchronized void kasuj(Byt byt) throws NiebytException {
-        if(byt == null || !jestByt(byt.getX(), byt.getY())) {
+        if(bytNieIstnieje(byt)) {
             throw new NiebytException();
         }
         usunBytZeStanu(byt);
+        byt.kasuj();
         notifyAll();
     }
 
     /**
      * Daje dwuelementową tablicę ze współrzędnymi x i y bytu, lub null, jeśli byt nie jest w chmurze.
+     * Treść zadania sugeruje że metoda nie powinna sprawdzać czy byt należy do chmury.
      */
     public int[] miejsce(Byt byt) {
         if(byt == null) {

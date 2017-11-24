@@ -75,10 +75,10 @@ public class ChmuraTest {
     }
 
     /**
-     * Sprawdza czy Byt z chmury A nie usunie bytu z chmury B na tej samej pozycji
+     * Sprawdza czy skasowany Byt nie może usunąć z chmury innego bytu.
      */
     @Test(expected = NiebytException.class)
-    public void testPrzynaleznosciDoChmury() throws Exception {
+    public void testCzyszczeniaBytu() throws Exception {
         Chmura chmura = new Chmura();
         Byt byt1 = chmura.ustaw(0, 0);
         chmura.kasuj(byt1);
@@ -88,16 +88,14 @@ public class ChmuraTest {
 
     /**
      * Sprawdza czy Byt z chmury A nie usunie bytu z chmury B na tej samej pozycji.
-     * (alternatywna wersja)
      */
     @Test(expected = NiebytException.class)
-    public void testPrzynaleznosciDoChmury2() throws Exception {
+    public void testPrzynaleznosciDoChmury() throws Exception {
         Chmura chmura1 = new Chmura();
         Chmura chmura2 = new Chmura();
         Byt byt1 = chmura1.ustaw(0, 0);
         Byt byt2 = chmura2.ustaw(0, 0);
         chmura2.kasuj(byt1);
     }
-
 
 }
