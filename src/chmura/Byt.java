@@ -4,6 +4,8 @@ package chmura;
  * Placeholder used for testing
  */
 public class Byt implements Comparable<Byt> {
+    // TODO: Dodać id chmury
+
     private int x;
     private int y;
 

@@ -10,6 +10,10 @@ import static org.junit.Assert.*;
 
 @SuppressWarnings("Duplicates")
 public class ChmuraTest {
+
+    /**
+     * Walidacja z treści zadania
+     */
     @Test
     public void walidacjaChmury() throws Exception {
         Chmura chmura = new Chmura((x, y) -> x < y);
@@ -28,6 +32,9 @@ public class ChmuraTest {
         // passes if no exception is thrown
     }
 
+    /**
+     * Sprawdza czy po wybudzeniu wątku ponownie sprawdzany jest warunek na przesunięcie bytów
+     */
     @Test
     public void przesunieciePoWybudzeniu() throws Exception {
         Chmura chmura = new Chmura();
@@ -66,4 +73,31 @@ public class ChmuraTest {
             assertArrayEquals(chmura.miejsce(b4), new int[]{4, 6});
         } catch (InterruptedException ignored) {}
     }
+
+    /**
+     * Sprawdza czy Byt z chmury A nie usunie bytu z chmury B na tej samej pozycji
+     */
+    @Test(expected = NiebytException.class)
+    public void testPrzynaleznosciDoChmury() throws Exception {
+        Chmura chmura = new Chmura();
+        Byt byt1 = chmura.ustaw(0, 0);
+        chmura.kasuj(byt1);
+        Byt byt2 = chmura.ustaw(0, 0);
+        chmura.kasuj(byt1);
+    }
+
+    /**
+     * Sprawdza czy Byt z chmury A nie usunie bytu z chmury B na tej samej pozycji.
+     * (alternatywna wersja)
+     */
+    @Test(expected = NiebytException.class)
+    public void testPrzynaleznosciDoChmury2() throws Exception {
+        Chmura chmura1 = new Chmura();
+        Chmura chmura2 = new Chmura();
+        Byt byt1 = chmura1.ustaw(0, 0);
+        Byt byt2 = chmura2.ustaw(0, 0);
+        chmura2.kasuj(byt1);
+    }
+
+
 }
