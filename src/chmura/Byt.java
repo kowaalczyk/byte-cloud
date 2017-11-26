@@ -3,12 +3,12 @@ package chmura;
 /**
  * Placeholder used for testing
  */
-public class Byt implements Comparable<Byt> {
+public class Byt {
     private int x;
     private int y;
     private Chmura chmura;
 
-    public Byt(int x, int y, Chmura chmura) {
+    Byt(int x, int y, Chmura chmura) {
         this.x = x;
         this.y = y;
         this.chmura = chmura;
@@ -43,24 +43,15 @@ public class Byt implements Comparable<Byt> {
         Byt byt = (Byt) o;
 
         if (x != byt.x) return false;
-        return y == byt.y;
+        if (y != byt.y) return false;
+        return chmura != null ? chmura.equals(byt.chmura) : byt.chmura == null;
     }
 
     @Override
     public int hashCode() {
         int result = x;
         result = 31 * result + y;
+        result = 31 * result + (chmura != null ? chmura.hashCode() : 0);
         return result;
-    }
-
-    @Override
-    public int compareTo(Byt that) {
-        if(this.x < that.x) {
-            return -1;
-        } else if(this.x > that.x) {
-            return 1;
-        } else {
-            return Integer.compare(this.y, that.y);
-        }
     }
 }
